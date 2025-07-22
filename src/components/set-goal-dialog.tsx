@@ -15,22 +15,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Info } from "lucide-react";
 
 interface SetGoalDialogProps {
   children: React.ReactNode;
   currentGoal: number;
   onGoalSet: (newGoal: number) => void;
+  notifications: boolean;
+  onNotificationsChange: (enabled: boolean) => void;
 }
 
 export function SetGoalDialog({
   children,
   currentGoal,
   onGoalSet,
+  notifications,
+  onNotificationsChange,
 }: SetGoalDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [goal, setGoal] = useState(currentGoal);
-  const [notifications, setNotifications] = useState(false);
 
   const handleSave = () => {
     if (goal > 0) {
@@ -80,14 +82,8 @@ export function SetGoalDialog({
                 Get notified to drink water.
               </p>
             </div>
-            <Switch id="notifications-switch" checked={notifications} onCheckedChange={setNotifications} />
+            <Switch id="notifications-switch" checked={notifications} onCheckedChange={onNotificationsChange} />
           </div>
-           {notifications && (
-             <div className="flex items-start gap-2 bg-accent/50 p-3 rounded-md text-accent-foreground text-xs border border-accent/50">
-               <Bell className="h-4 w-4 mt-0.5 shrink-0" />
-                <p>Firebase Cloud Messaging setup is required for notifications to work. This is a UI placeholder.</p>
-             </div>
-           )}
         </div>
         <DialogFooter>
           <Button type="button" onClick={handleSave}>

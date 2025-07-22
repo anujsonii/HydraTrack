@@ -18,6 +18,7 @@ import { WaterDropIcon } from "@/components/icons/water-drop-icon";
 import { SetGoalDialog } from "@/components/set-goal-dialog";
 import { ScrollArea } from "./ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { getMessagingToken } from "@/lib/firebase";
 
 interface Log {
   id: number;
@@ -28,6 +29,7 @@ interface Log {
 export function WaterTrackerDashboard() {
   const [goal, setGoal] = useState(3000);
   const [logs, setLogs] = useState<Log[]>([]);
+  const [notifications, setNotifications] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
 
@@ -36,6 +38,7 @@ export function WaterTrackerDashboard() {
     // Load data from localStorage if available
     const savedGoal = localStorage.getItem("hydrotrack-goal");
     const savedLogs = localStorage.getItem("hydrotrack-logs");
+    const savedNotifications = localStorage.getItem("hydrotrack-notifications");
     
     if (savedGoal) {
       setGoal(JSON.parse(savedGoal));
@@ -51,15 +54,19 @@ export function WaterTrackerDashboard() {
         localStorage.removeItem("hydrotrack-logs");
       }
     }
+     if (savedNotifications) {
+      setNotifications(JSON.parse(savedNotifications));
+    }
   }, []);
 
   useEffect(() => {
     if(isMounted) {
       localStorage.setItem("hydrotrack-goal", JSON.stringify(goal));
+      localStorage.setItem("hydrotrack-notifications", JSON.stringify(notifications));
       const today = new Date().toLocaleDateString();
       localStorage.setItem("hydrotrack-logs", JSON.stringify({ date: today, logs }));
     }
-  }, [goal, logs, isMounted]);
+  }, [goal, logs, notifications, isMounted]);
 
   const totalIntake = useMemo(() => {
     return logs.reduce((sum, log) => sum + log.amount, 0);
@@ -103,6 +110,36 @@ export function WaterTrackerDashboard() {
     });
   };
 
+  const handleNotificationsChange = async (enabled: boolean) => {
+    setNotifications(enabled);
+    if (enabled) {
+      const status = await Notification.requestPermission();
+      if (status === 'granted') {
+        toast({
+          title: "Notifications Enabled",
+          description: "You will now receive reminders.",
+        });
+        const fcmToken = await getMessagingToken();
+        if (fcmToken) {
+          console.log("FCM Token:", fcmToken);
+          // TODO: Send this token to your server to store it
+        }
+      } else {
+        setNotifications(false);
+        toast({
+          variant: "destructive",
+          title: "Permission Denied",
+          description: "You need to grant permission to enable notifications.",
+        });
+      }
+    } else {
+       toast({
+        title: "Notifications Disabled",
+        description: "You will no longer receive reminders.",
+      });
+    }
+  }
+
   if (!isMounted) {
     return null;
   }
@@ -116,7 +153,12 @@ export function WaterTrackerDashboard() {
             HydroTrack
           </h1>
         </div>
-        <SetGoalDialog currentGoal={goal} onGoalSet={handleSetGoal}>
+        <SetGoalDialog 
+          currentGoal={goal} 
+          onGoalSet={handleSetGoal}
+          notifications={notifications}
+          onNotificationsChange={handleNotificationsChange}
+        >
           <Button variant="ghost" size="icon" aria-label="Settings">
             <Settings className="h-5 w-5" />
           </Button>
