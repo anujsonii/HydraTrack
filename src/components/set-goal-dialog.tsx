@@ -87,7 +87,15 @@ export function SetGoalDialog({
               </Label>
               {isPermissionDenied ? (
                  <p className="text-sm text-destructive">
-                   Notifications are blocked by your browser. You'll need to enable them in your browser settings.
+                   Notifications are blocked. Please{" "}
+                   <a
+                    href="https://support.google.com/chrome/answer/3220216"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                   >
+                    enable them in your browser settings.
+                   </a>
                  </p>
               ) : (
                 <p className="text-sm text-muted-foreground">
