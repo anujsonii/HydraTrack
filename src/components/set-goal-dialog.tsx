@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,13 @@ export function SetGoalDialog({
 }: SetGoalDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [goal, setGoal] = useState(currentGoal);
+  const [isPermissionDenied, setIsPermissionDenied] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Notification) {
+      setIsPermissionDenied(Notification.permission === 'denied');
+    }
+  }, [isOpen]);
 
   const handleSave = () => {
     if (goal > 0) {
@@ -78,11 +85,22 @@ export function SetGoalDialog({
               <Label className="text-base" htmlFor="notifications-switch">
                 Reminders
               </Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified to drink water.
-              </p>
+              {isPermissionDenied ? (
+                 <p className="text-sm text-destructive">
+                   Notifications are blocked by your browser. You'll need to enable them in your browser settings.
+                 </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Get notified to drink water.
+                </p>
+              )}
             </div>
-            <Switch id="notifications-switch" checked={notifications} onCheckedChange={onNotificationsChange} />
+            <Switch 
+              id="notifications-switch" 
+              checked={notifications} 
+              onCheckedChange={onNotificationsChange} 
+              disabled={isPermissionDenied}
+            />
           </div>
         </div>
         <DialogFooter>
