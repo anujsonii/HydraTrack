@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -30,8 +30,10 @@ export function WaterTrackerDashboard() {
   const [goal, setGoal] = useState(3000);
   const [logs, setLogs] = useState<Log[]>([]);
   const [notifications, setNotifications] = useState(false);
+  const [reminderInterval, setReminderInterval] = useState(60);
   const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
+  const notificationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -39,6 +41,7 @@ export function WaterTrackerDashboard() {
     const savedGoal = localStorage.getItem("hydrotrack-goal");
     const savedLogs = localStorage.getItem("hydrotrack-logs");
     const savedNotifications = localStorage.getItem("hydrotrack-notifications");
+    const savedReminderInterval = localStorage.getItem("hydrotrack-reminder-interval");
     
     if (savedGoal) {
       setGoal(JSON.parse(savedGoal));
@@ -63,16 +66,42 @@ export function WaterTrackerDashboard() {
         setNotifications(areNotificationsEnabled);
       }
     }
+    if (savedReminderInterval) {
+        setReminderInterval(JSON.parse(savedReminderInterval));
+    }
   }, []);
 
   useEffect(() => {
     if(isMounted) {
       localStorage.setItem("hydrotrack-goal", JSON.stringify(goal));
       localStorage.setItem("hydrotrack-notifications", JSON.stringify(notifications));
+      localStorage.setItem("hydrotrack-reminder-interval", JSON.stringify(reminderInterval));
       const today = new Date().toLocaleDateString();
       localStorage.setItem("hydrotrack-logs", JSON.stringify({ date: today, logs }));
     }
-  }, [goal, logs, notifications, isMounted]);
+  }, [goal, logs, notifications, reminderInterval, isMounted]);
+  
+  useEffect(() => {
+    if (notificationIntervalRef.current) {
+      clearInterval(notificationIntervalRef.current);
+    }
+
+    if (notifications && reminderInterval > 0) {
+      notificationIntervalRef.current = setInterval(() => {
+        const notification = new Notification("Time for a drink!", {
+          body: `Stay hydrated! Your goal is ${goal}ml today.`,
+          icon: "/water-drop.png",
+        });
+      }, reminderInterval * 60 * 1000);
+    }
+
+    return () => {
+      if (notificationIntervalRef.current) {
+        clearInterval(notificationIntervalRef.current);
+      }
+    };
+  }, [notifications, reminderInterval, goal]);
+
 
   const totalIntake = useMemo(() => {
     return logs.reduce((sum, log) => sum + log.amount, 0);
@@ -133,7 +162,7 @@ export function WaterTrackerDashboard() {
         setNotifications(true);
         toast({
           title: "Notifications Enabled",
-          description: "You will now receive reminders.",
+          description: `You will now receive reminders every ${reminderInterval} minutes.`,
         });
         const fcmToken = await getMessagingToken();
         if (fcmToken) {
@@ -157,6 +186,14 @@ export function WaterTrackerDashboard() {
     }
   }
 
+  const handleReminderIntervalChange = (newInterval: number) => {
+    setReminderInterval(newInterval);
+    toast({
+      title: "Interval Updated",
+      description: `Reminders will be sent every ${newInterval} minutes.`,
+    });
+  };
+
   if (!isMounted) {
     return null;
   }
@@ -175,6 +212,8 @@ export function WaterTrackerDashboard() {
           onGoalSet={handleSetGoal}
           notifications={notifications}
           onNotificationsChange={handleNotificationsChange}
+          reminderInterval={reminderInterval}
+          onReminderIntervalChange={handleReminderIntervalChange}
         >
           <Button variant="ghost" size="icon" aria-label="Settings">
             <Settings className="h-5 w-5" />

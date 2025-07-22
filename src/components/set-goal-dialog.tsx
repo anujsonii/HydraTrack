@@ -22,6 +22,8 @@ interface SetGoalDialogProps {
   onGoalSet: (newGoal: number) => void;
   notifications: boolean;
   onNotificationsChange: (enabled: boolean) => void;
+  reminderInterval: number;
+  onReminderIntervalChange: (newInterval: number) => void;
 }
 
 export function SetGoalDialog({
@@ -30,9 +32,12 @@ export function SetGoalDialog({
   onGoalSet,
   notifications,
   onNotificationsChange,
+  reminderInterval,
+  onReminderIntervalChange,
 }: SetGoalDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [goal, setGoal] = useState(currentGoal);
+  const [interval, setInterval] = useState(reminderInterval);
   const [isPermissionDenied, setIsPermissionDenied] = useState(false);
 
   useEffect(() => {
@@ -44,8 +49,11 @@ export function SetGoalDialog({
   const handleSave = () => {
     if (goal > 0) {
       onGoalSet(goal);
-      setIsOpen(false);
     }
+    if (interval > 0) {
+      onReminderIntervalChange(interval);
+    }
+    setIsOpen(false);
   };
 
   return (
@@ -109,6 +117,23 @@ export function SetGoalDialog({
               onCheckedChange={onNotificationsChange} 
               disabled={isPermissionDenied}
             />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="interval" className="text-right">
+              Reminder Interval
+            </Label>
+            <div className="col-span-3 flex items-center gap-2">
+              <Input
+                id="interval"
+                type="number"
+                value={interval}
+                onChange={(e) => setInterval(Number(e.target.value))}
+                className="w-24"
+                min="1"
+                disabled={!notifications}
+              />
+              <span className="text-sm text-muted-foreground">minutes</span>
+            </div>
           </div>
         </div>
         <DialogFooter>
