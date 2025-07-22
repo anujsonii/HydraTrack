@@ -55,7 +55,13 @@ export function WaterTrackerDashboard() {
       }
     }
      if (savedNotifications) {
-      setNotifications(JSON.parse(savedNotifications));
+      const areNotificationsEnabled = JSON.parse(savedNotifications);
+      if (areNotificationsEnabled && Notification.permission !== 'granted') {
+        setNotifications(false);
+        localStorage.setItem("hydrotrack-notifications", JSON.stringify(false));
+      } else {
+        setNotifications(areNotificationsEnabled);
+      }
     }
   }, []);
 
@@ -111,10 +117,10 @@ export function WaterTrackerDashboard() {
   };
 
   const handleNotificationsChange = async (enabled: boolean) => {
-    setNotifications(enabled);
     if (enabled) {
       const status = await Notification.requestPermission();
       if (status === 'granted') {
+        setNotifications(true);
         toast({
           title: "Notifications Enabled",
           description: "You will now receive reminders.",
@@ -133,6 +139,7 @@ export function WaterTrackerDashboard() {
         });
       }
     } else {
+       setNotifications(false);
        toast({
         title: "Notifications Disabled",
         description: "You will no longer receive reminders.",
