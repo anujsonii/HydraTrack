@@ -118,6 +118,16 @@ export function WaterTrackerDashboard() {
 
   const handleNotificationsChange = async (enabled: boolean) => {
     if (enabled) {
+      if (Notification.permission === 'denied') {
+        toast({
+          variant: "destructive",
+          title: "Permission Denied",
+          description: "You need to grant permission in your browser settings to enable notifications.",
+        });
+        setNotifications(false);
+        return;
+      }
+
       const status = await Notification.requestPermission();
       if (status === 'granted') {
         setNotifications(true);
